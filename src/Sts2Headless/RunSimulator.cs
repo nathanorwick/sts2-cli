@@ -1879,6 +1879,60 @@ public class RunSimulator
         };
     }
 
+    private Dictionary<string, object?> GenerateFullMap(MegaCrit.Sts2.Core.Map.MapPoint startPoint, MegaCrit.Sts2.Core.Map.ActMap map) 
+    {
+        var fullMap = new Dictionary<string, Dictionary<string, object?>>();
+        Queue<MapPoint> q = new Queue<MapPoint>();
+        List<MapPoint> visited = new List<MapPoint>();
+
+        var root = CreateNode(startPoint);
+        fullMap[GetStringRepresentation(startPoint)] = root;
+
+        q.Enqueue(startPoint);
+        visited.Add(startPoint);
+
+
+        while (q.Count > 0) 
+        {
+            var current = q.Dequeue();
+            var parentNode = fullMap[GetStringRepresentation(current)];
+
+            foreach (var child in current.Children) 
+            {
+                if (!visited.Contains(child)) 
+                {
+                    visited.Add(child);
+
+                    if (!fullMap.ContainsKey(GetStringRepresentation(current))) 
+                        fullMap.Add(GetStringRepresentation(current), new Dictionary<string, object?>());
+
+                    var childNode = CreateNode(child);
+                    fullMap[GetStringRepresentation(child)] = childNode;
+
+                    ((List<Dictionary<string, object?>>) parentNode["children"]).Add(childNode);
+                    
+                    q.Enqueue(child);
+                }
+            }
+        }
+        return root;
+    }
+
+    private Dictionary<string, object?> CreateNode(MegaCrit.Sts2.Core.Map.MapPoint p)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["col"] = (int)p.coord.col,
+            ["row"] = (int)p.coord.row,
+            ["type"] = p.PointType.ToString(),
+            ["children"] = new List<Dictionary<string, object?>>()
+        };
+    }
+
+    private string GetStringRepresentation(MegaCrit.Sts2.Core.Map.MapPoint p) {
+        return $"[{p.coord.col}, {p.coord.row}]";
+    }
+
     private Dictionary<string, object?> MapSelectState()
     {
         var map = _runState?.Map;
@@ -1901,6 +1955,8 @@ public class RunSimulator
         var currentCoord = _runState!.CurrentMapCoord;
 
         List<Dictionary<string, object?>> choices;
+        string mapJSON = "";
+
         if (currentCoord.HasValue)
         {
             var currentPoint = map.GetPoint(currentCoord.Value);
@@ -1934,6 +1990,8 @@ public class RunSimulator
                     })
                     .ToList();
             }
+            var mapBFS = GenerateFullMap(currentPoint, map);
+            mapJSON = System.Text.Json.JsonSerializer.Serialize(mapBFS);
         }
         else
         {
@@ -1961,6 +2019,8 @@ public class RunSimulator
                     });
                 }
             }
+            var mapBFS = GenerateFullMap(startPoint, map);
+            mapJSON = System.Text.Json.JsonSerializer.Serialize(mapBFS);
         }
 
         return new Dictionary<string, object?>
@@ -1973,6 +2033,7 @@ public class RunSimulator
             ["act"] = _runState.CurrentActIndex + 1,
             ["act_name"] = _loc.Act(_runState.Act?.Id.Entry ?? "OVERGROWTH"),
             ["floor"] = _runState.ActFloor,
+            ["full_map"] = mapJSON,
         };
     }
 

@@ -1956,6 +1956,7 @@ public class RunSimulator
 
         List<Dictionary<string, object?>> choices;
         string mapJSON = "";
+        var mapBFS = new Dictionary<string, object?>();
 
         if (currentCoord.HasValue)
         {
@@ -1990,8 +1991,9 @@ public class RunSimulator
                     })
                     .ToList();
             }
-            var mapBFS = GenerateFullMap(currentPoint, map);
-            mapJSON = System.Text.Json.JsonSerializer.Serialize(mapBFS);
+            // var mapBFS = GenerateFullMap(currentPoint, map);
+            // mapJSON = System.Text.Json.JsonSerializer.Serialize(mapBFS);
+            mapBFS = GenerateFullMap(currentPoint, map);
         }
         else
         {
@@ -2019,8 +2021,9 @@ public class RunSimulator
                     });
                 }
             }
-            var mapBFS = GenerateFullMap(startPoint, map);
-            mapJSON = System.Text.Json.JsonSerializer.Serialize(mapBFS);
+            mapBFS = GenerateFullMap(startPoint, map);
+            // var mapBFS = GenerateFullMap(startPoint, map);
+            // mapJSON = System.Text.Json.JsonSerializer.Serialize(mapBFS);
         }
 
         return new Dictionary<string, object?>
@@ -2033,7 +2036,8 @@ public class RunSimulator
             ["act"] = _runState.CurrentActIndex + 1,
             ["act_name"] = _loc.Act(_runState.Act?.Id.Entry ?? "OVERGROWTH"),
             ["floor"] = _runState.ActFloor,
-            ["full_map"] = mapJSON,
+            ["full_map"] = mapBFS,
+            // ["full_map"] = mapJSON,
         };
     }
 
